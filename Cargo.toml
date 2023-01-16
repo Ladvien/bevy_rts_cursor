@@ -1,0 +1,10 @@
+[package]
+edition = "2021"
+name = "bevy_rts_cursor"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = {version = "0.9", features = ["dynamic"]}
+bevy_mod_raycast = "0.7.0"
