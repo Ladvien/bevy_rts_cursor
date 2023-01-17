@@ -4,13 +4,14 @@ use bevy::pbr::{NotShadowCaster, NotShadowReceiver};
 use bevy::prelude::*;
 use bevy_mod_raycast::{
     DefaultPluginState, DefaultRaycastingPlugin, Intersection, RaycastMesh, RaycastMethod,
-    RaycastSource, RaycastSystem,
+    RaycastSystem,
 };
 
 mod components;
 mod resources;
 mod util;
 
+pub use bevy_mod_raycast::RaycastSource;
 pub use components::{CursorReflector, Selected, SelectionHighlighter};
 pub use resources::{Aesthetics, Bounds2D, CursorPlugin};
 use util::keep_in_bounds;
@@ -108,14 +109,7 @@ fn setup(mut commands: Commands) {
 #[allow(clippy::type_complexity)]
 fn make_scene_pickable(
     mut commands: Commands,
-    mesh_query: Query<
-        Entity,
-        (
-            // With<Handle<Mesh>>,
-            // Without<RaycastMesh<RayReflector>>,
-            With<CursorReflector>,
-        ),
-    >,
+    mesh_query: Query<Entity, (With<CursorReflector>,)>,
 ) {
     for entity in &mesh_query {
         commands

@@ -3,8 +3,15 @@ edition = "2021"
 name = "bevy_rts_cursor"
 version = "0.1.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
 
 [dependencies]
 bevy = {version = "0.9", features = ["dynamic"]}
 bevy_mod_raycast = "0.7.0"
+
+[dev-dependencies]
+bevy-inspector-egui = "0.14.0"
