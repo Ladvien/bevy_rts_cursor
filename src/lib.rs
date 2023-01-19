@@ -1,19 +1,27 @@
 use std::collections::HashSet;
+use std::f32::consts::PI;
 
 use bevy::pbr::{NotShadowCaster, NotShadowReceiver};
 use bevy::prelude::*;
 use bevy_mod_raycast::{
     DefaultPluginState, DefaultRaycastingPlugin, Intersection, RaycastMesh, RaycastMethod,
-    RaycastSource, RaycastSystem,
+    RaycastSystem,
 };
 
 mod components;
+mod confirm_box;
+mod effects;
 mod resources;
 mod util;
 
+pub use bevy_mod_raycast::RaycastSource;
 pub use components::{CursorReflector, Selected, SelectionHighlighter};
+use confirm_box::create_selection_confirmation_outline;
+use effects::blink_system;
 pub use resources::{Aesthetics, Bounds2D, CursorPlugin};
 use util::keep_in_bounds;
+
+use crate::util::is_position_in_area;
 
 impl Default for CursorPlugin {
     fn default() -> Self {
@@ -31,7 +39,8 @@ impl Default for CursorPlugin {
 
 impl Plugin for CursorPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<Cursor>()
+        let app = app
+            .init_resource::<Cursor>()
             .insert_resource(Bounds2D {
                 min_x: self.bounds.min_x,
                 min_z: self.bounds.min_z,
@@ -48,6 +57,8 @@ impl Plugin for CursorPlugin {
                 update_raycast_with_cursor.before(RaycastSystem::BuildRays::<RayReflector>),
             )
             .add_system_to_stage(CoreStage::PostUpdate, make_scene_pickable);
+
+        app.add_system(blink_system);
     }
 }
 
@@ -106,67 +117,12 @@ fn setup(mut commands: Commands) {
 }
 
 #[allow(clippy::type_complexity)]
-fn make_scene_pickable(
-    mut commands: Commands,
-    mesh_query: Query<
-        Entity,
-        (
-            // With<Handle<Mesh>>,
-            // Without<RaycastMesh<RayReflector>>,
-            With<CursorReflector>,
-        ),
-    >,
-) {
+fn make_scene_pickable(mut commands: Commands, mesh_query: Query<Entity, With<CursorReflector>>) {
     for entity in &mesh_query {
         commands
             .entity(entity)
             .insert(RaycastMesh::<RayReflector>::default()); // Make this mesh ray cast-able
     }
-
-    // if let Err(e) = app_state.set(CursorState::Ready) {
-    //     eprintln!("{:?}", e);
-    // }
-}
-
-fn get_selection_confirmed_box(
-    cursor: Cursor,
-    line_thickness: f32,
-    ground_height: f32,
-) -> Vec<Mesh> {
-    vec![
-        Mesh::from(shape::Box {
-            min_x: cursor.xyz1[0],
-            max_x: cursor.xyz2[0] - line_thickness,
-            min_y: ground_height + 0.3,
-            max_y: ground_height + 0.3,
-            min_z: cursor.xyz2[2] - line_thickness,
-            max_z: cursor.xyz2[2] + line_thickness,
-        }),
-        Mesh::from(shape::Box {
-            min_x: cursor.xyz2[0] + line_thickness,
-            max_x: cursor.xyz1[0] + line_thickness,
-            min_y: ground_height + 0.3,
-            max_y: ground_height + 0.3,
-            min_z: cursor.xyz1[2] - line_thickness,
-            max_z: cursor.xyz1[2] + line_thickness,
-        }),
-        Mesh::from(shape::Box {
-            min_x: cursor.xyz2[0] - line_thickness,
-            max_x: cursor.xyz2[0] + line_thickness,
-            min_y: ground_height + 0.3,
-            max_y: ground_height + 0.3,
-            min_z: cursor.xyz1[2] + line_thickness,
-            max_z: cursor.xyz2[2] + line_thickness,
-        }),
-        Mesh::from(shape::Box {
-            min_x: cursor.xyz1[0] - line_thickness,
-            max_x: cursor.xyz1[0] + line_thickness,
-            min_y: ground_height + 0.3,
-            max_y: ground_height + 0.3,
-            min_z: cursor.xyz1[2] - line_thickness,
-            max_z: cursor.xyz2[2] + line_thickness,
-        }),
-    ]
 }
 
 fn selection_system(
@@ -179,69 +135,33 @@ fn selection_system(
     mut query: Query<(Entity, &mut Pickable), With<Pickable>>,
 ) {
     if cursor.selection.just_selected {
-        //                  c1
-        //                  *
-        //              *      *
-        //        c4 *            * c2
-        //              *      *
-        //                  *
-        //                 c3
-
-        let mut lines = get_selection_confirmed_box(
-            cursor.clone(),
-            aesthetics.line_thickness,
-            aesthetics.ground_height,
+        create_selection_confirmation_outline(
+            &mut commands,
+            &cursor,
+            &aesthetics,
+            &mut meshes,
+            &mut materials,
         );
-        let box_material = StandardMaterial {
-            alpha_mode: AlphaMode::Blend,
-            base_color: aesthetics.bounding_box_color,
-            emissive: aesthetics.bounding_box_color,
-            unlit: false,
-            ..default()
-        };
-        // let blinker = Blinker::new(0.01, AFTER_SELECTION_BLINK_DURATION, 2);
-
-        if let Some(parent_line) = &mut lines.pop() {
-            let parent_id = commands
-                .spawn(PbrBundle {
-                    material: materials.add(box_material.clone()),
-                    mesh: meshes.add(parent_line.clone()),
-                    ..default()
-                })
-                .insert(NotShadowReceiver)
-                .insert(NotShadowCaster)
-                // .insert(blinker.clone())
-                .insert(Name::new("SelectionBox"))
-                .id();
-            for line in lines {
-                let child_id = commands
-                    .spawn(PbrBundle {
-                        material: materials.add(box_material.clone()),
-                        mesh: meshes.add(line),
-                        ..default()
-                    })
-                    .insert(NotShadowReceiver)
-                    .insert(NotShadowCaster)
-                    // .insert(blinker.clone())
-                    .insert(Name::new("SelectionBox"))
-                    .id();
-                commands.entity(parent_id).add_child(child_id);
-            }
-        }
 
         for (entity, _) in query.iter_mut() {
             let transform = *transforms.get(entity).unwrap();
 
+            // Create a tolerance vector for checking if positions
+            // are in the area.
+            let tolerance = Vec3::new(0., transform.scale.y, 0.);
+
             // Check if entities are within the highlighted area.
-            if !transform.translation.cmplt(cursor.xyz1).any()
-                && !transform.translation.cmpgt(cursor.xyz2).any()
-            {
+            if is_position_in_area(transform.translation, cursor.xyz1, cursor.xyz2, tolerance) {
+                println!("Selected: {:?}", entity);
+
                 // Add selected torus.
+                let relative_bottom_of_mesh = transform.translation.y - transform.scale.y * 2.;
+                println!("bottom: {:?}", relative_bottom_of_mesh);
                 let child_id = commands
                     .spawn(PbrBundle {
                         mesh: meshes.add(Mesh::from(shape::Torus {
                             ring_radius: aesthetics.selected_line_thickness,
-                            radius: transform.scale.x.max(transform.scale.z) / 2.,
+                            radius: transform.scale.x.max(transform.scale.z) / 2. * PI,
                             ..default()
                         })),
                         material: materials.add(StandardMaterial {
@@ -250,7 +170,7 @@ fn selection_system(
                             ..default()
                         }),
                         transform: Transform {
-                            translation: Vec3::new(0., 0.1, 0.),
+                            translation: Vec3::new(0., relative_bottom_of_mesh, 0.),
                             ..default()
                         },
                         ..default()
@@ -258,15 +178,16 @@ fn selection_system(
                     .insert(SelectionHighlighter)
                     .insert(Name::new("SelectionHighlighter"))
                     .id();
+
                 commands.entity(entity).add_child(child_id);
 
                 // Track selected.
                 cursor.selection.selected_units.insert(entity);
-
                 commands.entity(entity).insert(Selected);
             }
         }
     }
+
     cursor.selection.just_selected = false;
 }
 
@@ -306,15 +227,17 @@ fn mouse_system(
         if cursor.pressed {
             let difference = cursor.location.xyz - cursor.pressed_location.xyz;
             transform.translation = cursor.pressed_location.xyz + difference / 2.;
-            transform.translation[1] += 0.25;
+            // Raise the selection box slightly or will clip with ground.
+            // TODO: maybe this should only impact display, not collision checks.
+            transform.translation[1] += 0.1;
             transform.scale = Vec3::new(difference.x, 0.0, difference.z);
         }
         if buttons.just_released(MouseButton::Left) {
             if let Some(entity) = cursor.selection.entity {
                 let x1 = transform.translation[0] - (transform.scale[0] / 2.);
                 let z1 = transform.translation[2] - (transform.scale[2] / 2.);
-                let y1 = aesthetics.ground_height;
-                let y2 = aesthetics.ground_height + 0.2;
+                let y1 = transform.translation[1];
+                let y2 = transform.translation[1] + 0.1;
                 let x2 = transform.translation[0] + transform.scale[0] - (transform.scale[0] / 2.);
                 let z2 = transform.translation[2] + transform.scale[2] - (transform.scale[2] / 2.);
 

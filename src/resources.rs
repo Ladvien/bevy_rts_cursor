@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-const GROUND_LEVEL: f32 = 0.1;
 const BOUNDING_BOX_COLOR: Color = Color::rgba(0.0, 1.0, 0.0, 0.33);
 const SELECTED_AREA_BOX_COLOR: Color = Color::rgba(1.0, 1.0, 0.0, 0.33);
 const THICKNESS_OF_SELECTION_LINES: f32 = 0.05;
@@ -21,12 +20,6 @@ pub struct Aesthetics {
     pub selected_area_box_color: Color,
     pub line_thickness: f32,
     pub selected_line_thickness: f32,
-    pub ground_height: f32,
-}
-
-pub struct CursorPlugin {
-    pub bounds: Bounds2D,
-    pub aesthetics: Aesthetics,
 }
 
 impl Default for Aesthetics {
@@ -36,7 +29,11 @@ impl Default for Aesthetics {
             selected_area_box_color: SELECTED_AREA_BOX_COLOR,
             line_thickness: SELECTED_LINE_THICKNESS,
             selected_line_thickness: THICKNESS_OF_SELECTION_LINES,
-            ground_height: GROUND_LEVEL,
         }
     }
+}
+
+pub struct CursorPlugin {
+    pub bounds: Bounds2D,
+    pub aesthetics: Aesthetics,
 }
