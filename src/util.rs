@@ -28,10 +28,7 @@ pub fn is_position_in_area(
     println!("pt1: {:?}", area_pt1);
     println!("pt2: {:?}", area_pt2);
     println!("tol: {:?}", tolerance);
-    let t =
-        !position.cmplt(area_pt1 - tolerance).any() && !position.cmpgt(area_pt2 + tolerance).any();
-    println!("is_position_in_area: {:?}", t);
-    t
+    !position.cmplt(area_pt1 - tolerance).any() && !position.cmpgt(area_pt2 + tolerance).any()
 }
 
 pub fn are_positions_near(v1: &Vec3, v2: &Vec3, sensitivity: f32) -> bool {
