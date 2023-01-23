@@ -223,24 +223,10 @@ fn mouse_system(
         }
         if buttons.just_released(MouseButton::Left) {
             if let Some(entity) = cursor.selection.entity {
-                let x1 = transform.translation[0] - (transform.scale[0] / 2.);
-                let z1 = transform.translation[2] - (transform.scale[2] / 2.);
-                let y1 = transform.translation[1];
-                let y2 = transform.translation[1] + 0.1;
-                let x2 = transform.translation[0] + transform.scale[0] - (transform.scale[0] / 2.);
-                let z2 = transform.translation[2] + transform.scale[2] - (transform.scale[2] / 2.);
-
-                let min_x = x1.min(x2);
-                let max_x = x1.max(x2);
-                let min_y = y1.min(y2);
-                let max_y = y1.max(y2);
-                let min_z = z1.min(z2);
-                let max_z = z1.max(z2);
-
                 cursor.selection.just_selected = true;
-                cursor.xyz1 = Vec3::new(min_x, min_y, min_z);
-                cursor.xyz2 = Vec3::new(max_x, max_y, max_z);
 
+                (cursor.xyz1, cursor.xyz2) =
+                    get_rectangle_points(transform.translation, transform.scale);
                 commands.entity(entity).despawn_recursive();
             }
         }
@@ -286,6 +272,27 @@ fn mouse_system(
             }
         }
     };
+}
+
+fn get_rectangle_points(position: Vec3, scale: Vec3) -> (Vec3, Vec3) {
+    let x1 = position[0] - (scale[0] / 2.);
+    let z1 = position[2] - (scale[2] / 2.);
+    let y1 = position[1];
+    let y2 = position[1] + 0.1;
+    let x2 = position[0] + scale[0] - (scale[0] / 2.);
+    let z2 = position[2] + scale[2] - (scale[2] / 2.);
+
+    let min_x = x1.min(x2);
+    let max_x = x1.max(x2);
+    let min_y = y1.min(y2);
+    let max_y = y1.max(y2);
+    let min_z = z1.min(z2);
+    let max_z = z1.max(z2);
+
+    (
+        Vec3::new(min_x, min_y, min_z),
+        Vec3::new(max_x, max_y, max_z),
+    )
 }
 
 // Update our `RaycastSource` with the current cursor position every frame.
