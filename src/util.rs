@@ -24,10 +24,10 @@ pub fn is_position_in_area(
     area_pt2: Vec3,
     tolerance: Vec3,
 ) -> bool {
-    println!("pos: {:?}", position);
-    println!("pt1: {:?}", area_pt1);
-    println!("pt2: {:?}", area_pt2);
-    println!("tol: {:?}", tolerance);
+    // println!("pos: {:?}", position);
+    // println!("pt1: {:?}", area_pt1);
+    // println!("pt2: {:?}", area_pt2);
+    // println!("tol: {:?}", tolerance);
     !position.cmplt(area_pt1 - tolerance).any() && !position.cmpgt(area_pt2 + tolerance).any()
 }
 

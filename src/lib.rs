@@ -3,6 +3,7 @@ use std::f32::consts::PI;
 
 use bevy::pbr::{NotShadowCaster, NotShadowReceiver};
 use bevy::prelude::*;
+use bevy::render::primitives::Aabb;
 use bevy_mod_raycast::{
     DefaultPluginState, DefaultRaycastingPlugin, Intersection, RaycastMesh, RaycastMethod,
     RaycastSystem,
@@ -19,6 +20,7 @@ pub use components::{CursorReflector, Selected, SelectionHighlighter};
 use confirm_box::create_selection_confirmation_outline;
 use effects::blink_system;
 pub use resources::{Aesthetics, Bounds2D, CursorPlugin};
+use resources::{Cursor, CursorSettings};
 use util::keep_in_bounds;
 
 use crate::util::is_position_in_area;
@@ -32,6 +34,7 @@ impl Default for CursorPlugin {
                 max_x: 1.,
                 max_z: 1.,
             },
+            y_inclusion_limit: 1.,
             aesthetics: Default::default(),
         }
     }
@@ -40,7 +43,10 @@ impl Default for CursorPlugin {
 impl Plugin for CursorPlugin {
     fn build(&self, app: &mut App) {
         let app = app
-            .init_resource::<Cursor>()
+            .insert_resource(Cursor {
+                cursor_settings: self.clone(),
+                ..Default::default()
+            })
             .insert_resource(Bounds2D {
                 min_x: self.bounds.min_x,
                 min_z: self.bounds.min_z,
@@ -48,6 +54,7 @@ impl Plugin for CursorPlugin {
                 max_z: self.bounds.max_z,
             })
             .insert_resource(self.aesthetics.to_owned())
+            // .insert_resource(self.y_inclusion_limit.to_owned())
             .add_plugin(DefaultRaycastingPlugin::<RayReflector>::default())
             .add_startup_system(setup)
             .add_system(selection_system)
@@ -60,24 +67,6 @@ impl Plugin for CursorPlugin {
 
         app.add_system(blink_system);
     }
-}
-
-#[derive(Resource, Default, Debug, Clone)]
-pub struct Cursor {
-    pub entity: Option<Entity>,
-    pub location: Location,
-    pub pressed_location: Location,
-    pub pressed: bool,
-    pub selection: Selection,
-    pub xyz1: Vec3,
-    pub xyz2: Vec3,
-}
-
-#[derive(Resource, Default, Debug, Clone)]
-pub struct Selection {
-    entity: Option<Entity>,
-    pub selected_units: HashSet<Entity>,
-    pub just_selected: bool,
 }
 
 #[derive(Component, Reflect, Default, Debug)]
@@ -131,7 +120,7 @@ fn selection_system(
     aesthetics: Res<Aesthetics>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    transforms: Query<&Transform>,
+    transforms: Query<(&Transform, &Aabb)>,
     mut query: Query<(Entity, &mut Pickable), With<Pickable>>,
 ) {
     if cursor.selection.just_selected {
@@ -144,18 +133,15 @@ fn selection_system(
         );
 
         for (entity, _) in query.iter_mut() {
-            let transform = *transforms.get(entity).unwrap();
+            let (transform, aabb) = transforms.get(entity).unwrap();
 
             // Create a tolerance vector for checking if positions
             // are in the area.
-            let tolerance = Vec3::new(0., transform.scale.y, 0.);
+            let tolerance = Vec3::new(0., cursor.cursor_settings.y_inclusion_limit, 0.);
 
             // Check if entities are within the highlighted area.
             if is_position_in_area(transform.translation, cursor.xyz1, cursor.xyz2, tolerance) {
-                println!("Selected: {:?}", entity);
-
-                // Add selected torus.
-                let relative_bottom_of_mesh = transform.translation.y - transform.scale.y * 2.;
+                let relative_bottom_of_mesh = aabb.half_extents.y * -1.;
                 println!("bottom: {:?}", relative_bottom_of_mesh);
                 let child_id = commands
                     .spawn(PbrBundle {

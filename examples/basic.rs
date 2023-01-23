@@ -27,6 +27,7 @@ fn main() {
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(CursorPlugin {
             bounds: GAME_BOUNDS,
+            y_inclusion_limit: 2.,
             ..Default::default()
         })
         .add_startup_system(setup)
@@ -42,7 +43,7 @@ fn setup(
 ) {
     commands
         .spawn((Camera3dBundle {
-            transform: Transform::from_xyz(GAME_BOUNDS.max_x + 5., 12., GAME_BOUNDS.max_z + 5.)
+            transform: Transform::from_xyz(GAME_BOUNDS.max_x, 16., GAME_BOUNDS.max_z)
                 .looking_at(Vec3::ZERO, Vec3::Y),
             ..default()
         },))
@@ -89,12 +90,52 @@ fn setup(
                 ..default()
             }),
             transform: Transform {
-                translation: Vec3::new(14., half_size, 14.),
+                translation: Vec3::new(15., half_size, 15.),
                 ..Default::default()
             },
             ..Default::default()
         })
-        .insert(Pickable);
+        .insert(Pickable)
+        .insert(Name::new("BLUE"));
+
+    commands
+        .spawn(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Box::new(0.5, 0.5, 0.5))),
+            material: materials.add(StandardMaterial {
+                emissive: Color::RED,
+                ..default()
+            }),
+            transform: Transform {
+                translation: Vec3::new(6., 0.5 / 2., 14.),
+                // scale: Vec3::new(2., 1., 2.),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .insert(Pickable)
+        .insert(Name::new("RED"));
+
+    commands
+        .spawn(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Box::new(
+                box_size,
+                box_size * 2.,
+                box_size,
+            ))),
+            material: materials.add(StandardMaterial {
+                emissive: Color::ORANGE_RED,
+                ..default()
+            }),
+            transform: Transform {
+                translation: Vec3::new(14., box_size / 2. * 2., 6.),
+                // scale: Vec3::new(2., 3., 2.),
+                ..Default::default()
+            },
+
+            ..Default::default()
+        })
+        .insert(Pickable)
+        .insert(Name::new("ORANGE"));
 }
 
 fn camera_controls(
