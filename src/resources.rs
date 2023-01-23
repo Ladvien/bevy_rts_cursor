@@ -61,6 +61,7 @@ pub struct CursorPlugin {
     pub bounds: Bounds2D,
     pub aesthetics: Aesthetics,
     pub y_inclusion_limit: f32,
+    pub torus_offset: f32,
 }
 
 pub type CursorSettings = CursorPlugin;

@@ -31,6 +31,11 @@ pub fn is_position_in_area(
     !position.cmplt(area_pt1 - tolerance).any() && !position.cmpgt(area_pt2 + tolerance).any()
 }
 
+pub fn hypotenuse(a: f32, b: f32) -> f32 {
+    let c: f32 = a.powi(2) + b.powi(2);
+    return c.sqrt();
+}
+
 pub fn are_positions_near(v1: &Vec3, v2: &Vec3, sensitivity: f32) -> bool {
     v2.cmpgt(*v1 - sensitivity).all() && v2.cmplt(*v1 + sensitivity).all()
 }

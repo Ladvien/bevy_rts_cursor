@@ -21,7 +21,7 @@ use confirm_box::create_selection_confirmation_outline;
 use effects::blink_system;
 pub use resources::{Aesthetics, Bounds2D, CursorPlugin};
 use resources::{Cursor, CursorSettings};
-use util::keep_in_bounds;
+use util::{hypotenuse, keep_in_bounds};
 
 use crate::util::is_position_in_area;
 
@@ -35,6 +35,7 @@ impl Default for CursorPlugin {
                 max_z: 1.,
             },
             y_inclusion_limit: 1.,
+            torus_offset: 0.1,
             aesthetics: Default::default(),
         }
     }
@@ -54,7 +55,6 @@ impl Plugin for CursorPlugin {
                 max_z: self.bounds.max_z,
             })
             .insert_resource(self.aesthetics.to_owned())
-            // .insert_resource(self.y_inclusion_limit.to_owned())
             .add_plugin(DefaultRaycastingPlugin::<RayReflector>::default())
             .add_startup_system(setup)
             .add_system(selection_system)
@@ -139,6 +139,9 @@ fn selection_system(
             // are in the area.
             let tolerance = Vec3::new(0., cursor.cursor_settings.y_inclusion_limit, 0.);
 
+            let torus_size = hypotenuse(aabb.half_extents.x, aabb.half_extents.z)
+                + cursor.cursor_settings.torus_offset;
+
             // Check if entities are within the highlighted area.
             if is_position_in_area(transform.translation, cursor.xyz1, cursor.xyz2, tolerance) {
                 let relative_bottom_of_mesh = aabb.half_extents.y * -1.;
@@ -147,7 +150,7 @@ fn selection_system(
                     .spawn(PbrBundle {
                         mesh: meshes.add(Mesh::from(shape::Torus {
                             ring_radius: aesthetics.selected_line_thickness,
-                            radius: transform.scale.x.max(transform.scale.z) / 2. * PI,
+                            radius: torus_size,
                             ..default()
                         })),
                         material: materials.add(StandardMaterial {

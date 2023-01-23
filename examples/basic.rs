@@ -107,7 +107,6 @@ fn setup(
             }),
             transform: Transform {
                 translation: Vec3::new(6., 0.5 / 2., 14.),
-                // scale: Vec3::new(2., 1., 2.),
                 ..Default::default()
             },
             ..Default::default()
@@ -120,15 +119,14 @@ fn setup(
             mesh: meshes.add(Mesh::from(shape::Box::new(
                 box_size,
                 box_size * 2.,
-                box_size,
+                box_size + 4.,
             ))),
             material: materials.add(StandardMaterial {
                 emissive: Color::ORANGE_RED,
                 ..default()
             }),
             transform: Transform {
-                translation: Vec3::new(14., box_size / 2. * 2., 6.),
-                // scale: Vec3::new(2., 3., 2.),
+                translation: Vec3::new(14., box_size / 2. * 2., 8.),
                 ..Default::default()
             },
 
