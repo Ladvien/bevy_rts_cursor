@@ -34,7 +34,3 @@ pub fn hypotenuse(a: f32, b: f32) -> f32 {
 pub fn map_value_to_range(value: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
     return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
-
-pub fn are_positions_near(v1: &Vec3, v2: &Vec3, sensitivity: f32) -> bool {
-    v2.cmpgt(*v1 - sensitivity).all() && v2.cmplt(*v1 + sensitivity).all()
-}

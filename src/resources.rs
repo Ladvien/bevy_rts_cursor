@@ -1,13 +1,9 @@
-use std::collections::HashSet;
-
 use bevy::prelude::*;
-
-use crate::Location;
+use std::collections::HashSet;
 
 const BOUNDING_BOX_COLOR: Color = Color::rgba(0.0, 1.0, 0.0, 0.33);
 const SELECTED_AREA_BOX_COLOR: Color = Color::rgba(1.0, 1.0, 0.0, 0.33);
 const THICKNESS_OF_SELECTION_LINES: f32 = 0.05;
-const AFTER_SELECTION_BLINK_DURATION: f32 = 0.08;
 const SELECTED_LINE_THICKNESS: f32 = 0.1;
 
 #[derive(Resource, Default, Debug, Clone)]

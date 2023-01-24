@@ -1,6 +1,4 @@
 use std::collections::HashSet;
-use std::f32::consts::PI;
-use std::process::exit;
 
 use bevy::pbr::{NotShadowCaster, NotShadowReceiver};
 use bevy::prelude::*;
@@ -18,13 +16,12 @@ mod util;
 
 pub use bevy_mod_raycast::RaycastSource;
 pub use components::{CursorReflector, Selected, SelectionHighlighter};
+pub use resources::{Aesthetics, Bounds2D, CursorPlugin};
+
 use confirm_box::create_selection_confirmation_outline;
 use effects::blink_system;
-pub use resources::{Aesthetics, Bounds2D, CursorPlugin};
-use resources::{Cursor, CursorSettings};
-use util::{hypotenuse, keep_in_bounds};
-
-use crate::util::is_position_in_area;
+use resources::Cursor;
+use util::{hypotenuse, is_position_in_area, keep_in_bounds};
 
 impl Default for CursorPlugin {
     fn default() -> Self {
