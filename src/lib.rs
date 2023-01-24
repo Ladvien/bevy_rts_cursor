@@ -219,7 +219,15 @@ fn mouse_system(
                             unlit: false,
                             ..default()
                         }),
-                        mesh: meshes.add(Mesh::from(shape::Cube { size: 1. })),
+                        transform: Transform {
+                            translation: Vec3::new(
+                                cursor.location.xyz.x,
+                                cursor.location.xyz.y - 0.1,
+                                cursor.location.xyz.z,
+                            ),
+                            ..Default::default()
+                        },
+                        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
                         ..default()
                     },
                     BoundingBox,
