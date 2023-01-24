@@ -15,7 +15,7 @@ pub struct Cursor {
     pub entity: Option<Entity>,
     pub location: Location,
     pub pressed_location: Location,
-    pub pressed: bool,
+    // pub pressed: bool,
     pub selection: Selection,
     pub xyz1: Vec3,
     pub xyz2: Vec3,

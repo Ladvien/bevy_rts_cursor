@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::f32::consts::PI;
+use std::process::exit;
 
 use bevy::pbr::{NotShadowCaster, NotShadowReceiver};
 use bevy::prelude::*;
@@ -202,36 +203,8 @@ fn mouse_system(
     }
 
     if buttons.just_pressed(MouseButton::Left) {
-        cursor.pressed = true;
         cursor.pressed_location = cursor.location;
-    }
-    if buttons.just_released(MouseButton::Left) {
-        cursor.pressed = false;
-        cursor.pressed_location = Location {
-            xyz: Vec3::new(-1., -1., -1.),
-        }
-    }
 
-    if let Ok((mut transform, _)) = query.get_single_mut() {
-        if cursor.pressed {
-            let difference = cursor.location.xyz - cursor.pressed_location.xyz;
-            transform.translation = cursor.pressed_location.xyz + difference / 2.;
-            // Raise the selection box slightly or will clip with ground.
-            // TODO: maybe this should only impact display, not collision checks.
-            transform.translation[1] += 0.1;
-            transform.scale = Vec3::new(difference.x, 0.0, difference.z);
-        }
-        if buttons.just_released(MouseButton::Left) {
-            if let Some(entity) = cursor.selection.entity {
-                cursor.selection.just_selected = true;
-
-                (cursor.xyz1, cursor.xyz2) =
-                    get_rectangle_points(transform.translation, transform.scale);
-                commands.entity(entity).despawn_recursive();
-            }
-        }
-    }
-    if buttons.just_pressed(MouseButton::Left) {
         cursor.xyz1 = Vec3::new(-1., -1., -1.);
         cursor.xyz2 = Vec3::new(-1., -1., -1.);
 
@@ -272,6 +245,33 @@ fn mouse_system(
             }
         }
     };
+
+    if buttons.just_released(MouseButton::Left) {
+        // cursor.pressed = false;
+        cursor.pressed_location = Location {
+            xyz: Vec3::new(-1., -1., -1.),
+        }
+    }
+
+    if let Ok((mut transform, _)) = query.get_single_mut() {
+        if buttons.pressed(MouseButton::Left) {
+            let difference = cursor.location.xyz - cursor.pressed_location.xyz;
+            transform.translation = cursor.pressed_location.xyz + difference / 2.;
+            // Raise the selection box slightly or will clip with ground.
+            // TODO: maybe this should only impact display, not collision checks.
+            transform.translation[1] += 0.1;
+            transform.scale = Vec3::new(difference.x, 0.0, difference.z);
+        }
+        if buttons.just_released(MouseButton::Left) {
+            if let Some(entity) = cursor.selection.entity {
+                cursor.selection.just_selected = true;
+
+                (cursor.xyz1, cursor.xyz2) =
+                    get_rectangle_points(transform.translation, transform.scale);
+                commands.entity(entity).despawn_recursive();
+            }
+        }
+    }
 }
 
 fn get_rectangle_points(position: Vec3, scale: Vec3) -> (Vec3, Vec3) {
