@@ -146,7 +146,6 @@ fn selection_system(
             // Check if entities are within the highlighted area.
             if is_position_in_area(transform.translation, cursor.xyz1, cursor.xyz2, tolerance) {
                 let relative_bottom_of_mesh = aabb.half_extents.y * -1.;
-                println!("bottom: {:?}", relative_bottom_of_mesh);
                 let child_id = commands
                     .spawn(PbrBundle {
                         mesh: meshes.add(Mesh::from(shape::Torus {
@@ -190,15 +189,15 @@ fn mouse_system(
     mut materials: ResMut<Assets<StandardMaterial>>,
     intersection_query: Query<&Intersection<RayReflector>>,
     mut query: Query<(&mut Transform, &BoundingBox)>,
-    selection_hihlights: Query<Entity, With<SelectionHighlighter>>,
+    selection_highlights: Query<Entity, With<SelectionHighlighter>>,
     selected: Query<Entity, With<Selected>>,
     bounds: Res<Bounds2D>,
 ) {
     // RayCast to get the mouse position in game coordinates.
     for intersection in &intersection_query {
         if let Some(xyz) = intersection.position() {
-            cursor.location.xyz = xyz.to_owned();
-            cursor.location.xyz = keep_in_bounds(&bounds, cursor.location.xyz, 0.);
+            cursor.location = xyz.to_owned();
+            cursor.location = keep_in_bounds(&bounds, cursor.location, 0.);
         }
     }
 
@@ -221,9 +220,9 @@ fn mouse_system(
                         }),
                         transform: Transform {
                             translation: Vec3::new(
-                                cursor.location.xyz.x,
-                                cursor.location.xyz.y - 0.1,
-                                cursor.location.xyz.z,
+                                cursor.location.x,
+                                cursor.location.y - 0.1,
+                                cursor.location.z,
                             ),
                             ..Default::default()
                         },
@@ -248,25 +247,21 @@ fn mouse_system(
             }
 
             // Clear SelectionHighlights on deselect.
-            for entity in &selection_hihlights {
+            for entity in &selection_highlights {
                 commands.entity(entity).despawn_recursive();
             }
         }
     };
 
     if buttons.just_released(MouseButton::Left) {
-        // cursor.pressed = false;
-        cursor.pressed_location = Location {
-            xyz: Vec3::new(-1., -1., -1.),
-        }
+        cursor.pressed_location = Vec3::new(-1., -1., -1.);
     }
 
     if let Ok((mut transform, _)) = query.get_single_mut() {
         if buttons.pressed(MouseButton::Left) {
-            let difference = cursor.location.xyz - cursor.pressed_location.xyz;
-            transform.translation = cursor.pressed_location.xyz + difference / 2.;
+            let difference = cursor.location - cursor.pressed_location;
+            transform.translation = cursor.pressed_location + difference / 2.;
             // Raise the selection box slightly or will clip with ground.
-            // TODO: maybe this should only impact display, not collision checks.
             transform.translation[1] += 0.1;
             transform.scale = Vec3::new(difference.x, 0.0, difference.z);
         }
@@ -303,12 +298,10 @@ fn get_rectangle_points(position: Vec3, scale: Vec3) -> (Vec3, Vec3) {
     )
 }
 
-// Update our `RaycastSource` with the current cursor position every frame.
 fn update_raycast_with_cursor(
     mut cursor: EventReader<CursorMoved>,
     mut query: Query<&mut RaycastSource<RayReflector>>,
 ) {
-    // Grab the most recent cursor event if it exists:
     let cursor_position = match cursor.iter().last() {
         Some(cursor_moved) => cursor_moved.position,
         None => return,

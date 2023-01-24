@@ -24,16 +24,15 @@ pub fn is_position_in_area(
     area_pt2: Vec3,
     tolerance: Vec3,
 ) -> bool {
-    // println!("pos: {:?}", position);
-    // println!("pt1: {:?}", area_pt1);
-    // println!("pt2: {:?}", area_pt2);
-    // println!("tol: {:?}", tolerance);
     !position.cmplt(area_pt1 - tolerance).any() && !position.cmpgt(area_pt2 + tolerance).any()
 }
 
 pub fn hypotenuse(a: f32, b: f32) -> f32 {
-    let c: f32 = a.powi(2) + b.powi(2);
-    return c.sqrt();
+    (a.powi(2) + b.powi(2)).sqrt()
+}
+
+pub fn map_value_to_range(value: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
+    return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 pub fn are_positions_near(v1: &Vec3, v2: &Vec3, sensitivity: f32) -> bool {

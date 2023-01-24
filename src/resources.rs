@@ -13,9 +13,8 @@ const SELECTED_LINE_THICKNESS: f32 = 0.1;
 #[derive(Resource, Default, Debug, Clone)]
 pub struct Cursor {
     pub entity: Option<Entity>,
-    pub location: Location,
-    pub pressed_location: Location,
-    // pub pressed: bool,
+    pub location: Vec3,
+    pub pressed_location: Vec3,
     pub selection: Selection,
     pub xyz1: Vec3,
     pub xyz2: Vec3,

@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+
+use crate::util::map_value_to_range;
 #[derive(Component, Reflect, Default, Clone)]
 #[reflect(Component)]
 pub struct Blinker {
@@ -59,8 +61,4 @@ pub fn blink_system(
             }
         }
     }
-}
-
-fn map_value_to_range(value: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
-    return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
