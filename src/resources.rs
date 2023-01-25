@@ -14,7 +14,7 @@ pub struct Cursor {
     pub selection: Selection,
     pub xyz1: Vec3,
     pub xyz2: Vec3,
-    pub cursor_settings: CursorSettings,
+    pub settings: CursorSettings,
 }
 
 #[derive(Resource, Default, Debug, Clone)]

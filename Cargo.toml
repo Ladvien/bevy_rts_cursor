@@ -1,13 +1,14 @@
 [package]
+authors = ["C. Thomas Brittain <cthomasbrittain@hotmail.com>"]
+categories = ["cursor", "rts"]
+description = "A 3D mouse picking and raycasting plugin for Bevy."
 edition = "2021"
+keywords = ["gamedev", "selection", "bevy", "raycast"]
+license = "MIT"
 name = "bevy_rts_cursor"
-version = "0.1.0"
-
-[profile.dev]
-opt-level = 1
-
-[profile.dev.package."*"]
-opt-level = 3
+repository = "https://github.com/Ladvien/bevy_rts_cursor/"
+resolver = "2"
+version = "0.0.1"
 
 [dependencies]
 bevy = {version = "0.9", features = ["dynamic"]}

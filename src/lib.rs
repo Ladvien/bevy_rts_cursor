@@ -43,16 +43,9 @@ impl Plugin for CursorPlugin {
     fn build(&self, app: &mut App) {
         let app = app
             .insert_resource(Cursor {
-                cursor_settings: self.clone(),
+                settings: self.clone(),
                 ..Default::default()
             })
-            .insert_resource(Bounds2D {
-                min_x: self.bounds.min_x,
-                min_z: self.bounds.min_z,
-                max_x: self.bounds.max_x,
-                max_z: self.bounds.max_z,
-            })
-            .insert_resource(self.aesthetics.to_owned())
             .add_plugin(DefaultRaycastingPlugin::<RayReflector>::default())
             .add_startup_system(setup)
             .add_system(selection_system)
@@ -115,7 +108,6 @@ fn make_scene_pickable(mut commands: Commands, mesh_query: Query<Entity, With<Cu
 fn selection_system(
     mut commands: Commands,
     mut cursor: ResMut<Cursor>,
-    aesthetics: Res<Aesthetics>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     transforms: Query<(&Transform, &Aabb)>,
@@ -125,7 +117,7 @@ fn selection_system(
         create_selection_confirmation_outline(
             &mut commands,
             &cursor,
-            &aesthetics,
+            &cursor.settings.aesthetics,
             &mut meshes,
             &mut materials,
         );
@@ -135,10 +127,10 @@ fn selection_system(
 
             // Create a tolerance vector for checking if positions
             // are in the area.
-            let tolerance = Vec3::new(0., cursor.cursor_settings.y_inclusion_limit, 0.);
+            let tolerance = Vec3::new(0., cursor.settings.y_inclusion_limit, 0.);
 
-            let torus_size = hypotenuse(aabb.half_extents.x, aabb.half_extents.z)
-                + cursor.cursor_settings.torus_offset;
+            let torus_size =
+                hypotenuse(aabb.half_extents.x, aabb.half_extents.z) + cursor.settings.torus_offset;
 
             // Check if entities are within the highlighted area.
             if is_position_in_area(transform.translation, cursor.xyz1, cursor.xyz2, tolerance) {
@@ -146,13 +138,13 @@ fn selection_system(
                 let child_id = commands
                     .spawn(PbrBundle {
                         mesh: meshes.add(Mesh::from(shape::Torus {
-                            ring_radius: aesthetics.selected_line_thickness,
+                            ring_radius: cursor.settings.aesthetics.selected_line_thickness,
                             radius: torus_size,
                             ..default()
                         })),
                         material: materials.add(StandardMaterial {
-                            base_color: aesthetics.selected_area_box_color,
-                            emissive: aesthetics.selected_area_box_color,
+                            base_color: cursor.settings.aesthetics.selected_area_box_color,
+                            emissive: cursor.settings.aesthetics.selected_area_box_color,
                             ..default()
                         }),
                         transform: Transform {
@@ -179,22 +171,20 @@ fn selection_system(
 
 fn mouse_system(
     mut commands: Commands,
-    buttons: Res<Input<MouseButton>>,
-    aesthetics: Res<Aesthetics>,
     mut cursor: ResMut<Cursor>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    intersection_query: Query<&Intersection<RayReflector>>,
     mut query: Query<(&mut Transform, &BoundingBox)>,
+    buttons: Res<Input<MouseButton>>,
+    intersection_query: Query<&Intersection<RayReflector>>,
     selection_highlights: Query<Entity, With<SelectionHighlighter>>,
     selected: Query<Entity, With<Selected>>,
-    bounds: Res<Bounds2D>,
 ) {
     // RayCast to get the mouse position in game coordinates.
     for intersection in &intersection_query {
         if let Some(xyz) = intersection.position() {
             cursor.location = xyz.to_owned();
-            cursor.location = keep_in_bounds(&bounds, cursor.location, 0.);
+            cursor.location = keep_in_bounds(&cursor.settings.bounds, cursor.location, 0.);
         }
     }
 
@@ -210,8 +200,8 @@ fn mouse_system(
                     PbrBundle {
                         material: materials.add(StandardMaterial {
                             alpha_mode: AlphaMode::Blend,
-                            base_color: aesthetics.bounding_box_color,
-                            emissive: aesthetics.bounding_box_color,
+                            base_color: cursor.settings.aesthetics.bounding_box_color,
+                            emissive: cursor.settings.aesthetics.bounding_box_color,
                             unlit: false,
                             ..default()
                         }),

@@ -16,9 +16,9 @@ impl Blinker {
     pub fn new(speed: f32, duration: f32, number_of_blinks: usize) -> Self {
         Self {
             timer: Timer::from_seconds(0.01, TimerMode::Repeating),
-            speed: speed,
-            duration: duration,
-            number_of_blinks: number_of_blinks,
+            speed,
+            duration,
+            number_of_blinks,
             duration_const: duration,
             direction: -1.,
         }
@@ -35,7 +35,7 @@ pub fn blink_system(
         if let Some(material) = materials.get_mut(&material) {
             blinker.timer.tick(time.delta());
             if blinker.timer.just_finished() {
-                if blinker.number_of_blinks <= 0 {
+                if blinker.number_of_blinks == 0 {
                     commands.entity(entity).despawn_recursive();
                     continue;
                 }
