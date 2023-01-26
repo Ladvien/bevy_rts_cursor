@@ -2,9 +2,9 @@
   
 # Entity Selection Cursor
 
-![bevy-rts-cursor-demo]()
-
 A [Bevy](https://github.com/bevyengine/bevy) plugin for selecting game entities in world space. Built with [aevyrie's](https://github.com/aevyrie) amazing [`bevy_mod_raycast`](https://github.com/aevyrie/bevy_mod_raycast) plugin.
+
+![bevy_cursor_demo](https://user-images.githubusercontent.com/6241517/214854473-659d8e91-283d-4f85-976f-b4ac5ffdf22a.gif)
 
 ## Features
 * 
