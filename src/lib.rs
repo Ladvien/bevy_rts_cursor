@@ -20,7 +20,7 @@ pub use resources::{Aesthetics, Bounds2D, CursorPlugin};
 
 use confirm_box::create_selection_confirmation_outline;
 use effects::blink_system;
-use resources::Cursor;
+pub use resources::Cursor;
 use util::{hypotenuse, is_position_in_area, keep_in_bounds};
 
 impl Default for CursorPlugin {

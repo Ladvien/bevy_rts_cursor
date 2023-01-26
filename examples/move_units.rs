@@ -1,9 +1,11 @@
+// TODO: Add a system to add a Destination for units.
+
 use std::f32::consts::PI;
 
 use bevy::prelude::*;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_rts_cursor::{
-    Bounds2D, CursorPlugin, CursorReflector, Pickable, RayReflector, RaycastSource,
+    Bounds2D, Cursor, CursorPlugin, CursorReflector, Pickable, RayReflector, RaycastSource,
 };
 
 pub const GAME_X_MIN: f32 = -16.0;
@@ -65,6 +67,7 @@ fn main() {
         .add_system(bevy::window::close_on_esc)
         .add_system(movement_system)
         .add_system(adjust_still_units_system)
+        .add_system(select_destination)
         .run();
 }
 
@@ -130,7 +133,6 @@ fn setup(
             }
             let adjusted_x = i as f32 + SOCIAL_DISTANCE + i as f32 * scale + group_offset;
             let adjusted_z = j as f32 + SOCIAL_DISTANCE + j as f32 * scale + group_offset;
-            println!("num: {:?}, x: {:?}, z: {:?}", i + i, adjusted_x, adjusted_z);
             commands
                 .spawn(PbrBundle {
                     mesh: meshes.add(Mesh::from(shape::Box::new(scale, scale, scale))),
@@ -217,7 +219,22 @@ pub fn adjust_still_units_system(
                 new_destination,
                 &speed,
                 time.delta_seconds(),
-            )
+            );
+
+            transform.translation = keep_in_bounds(GAME_BOUNDS, transform.translation, 0.0);
+        }
+    }
+}
+
+pub fn select_destination(
+    mut commands: Commands,
+    cursor: Res<Cursor>,
+    buttons: Res<Input<MouseButton>>,
+) {
+    if buttons.just_pressed(MouseButton::Left) {
+        for unit in &cursor.selection.selected_units {
+            println!("Adding destination to {:?}", unit);
+            commands.entity(*unit).insert(Destination(cursor.location));
         }
     }
 }
@@ -235,7 +252,6 @@ pub fn movement_system(
         .into_iter()
         .map(|t| return (t.0, t.1.translation))
         .collect();
-    println!("{:?}", units_positions);
     for (entity, mut transform, destination, speed) in &mut units {
         if game.mechanics.move_cooldown.tick(time.delta()).finished() {
             let new_destination = adjust_movement_for_neighbors(
@@ -281,7 +297,7 @@ fn move_unit(
 ) -> Vec3 {
     let mut new_unit_position =
         unit_position.lerp(new_destination, unit_speed.value * delta_seconds);
-    new_unit_position = keep_in_bounds(GAME_BOUNDS, new_unit_position, 2.);
+    new_unit_position = keep_in_bounds(GAME_BOUNDS, new_unit_position, 0.0);
     new_unit_position.y = GROUND_LEVEL;
     new_unit_position
 }
@@ -300,11 +316,11 @@ fn adjust_movement_for_neighbors(
         }
 
         if are_positions_near(&unit_position, &other_position, SOCIAL_DISTANCE) {
-            // println!("These guys are buddies!");
             let difference = *unit_position - *other_position;
             let minimum_distance = SOCIAL_DISTANCE + SOCIAL_DISTANCE; // Replace with unit specific social distances
             new_destination +=
                 difference.normalize() * (minimum_distance - difference) / minimum_distance;
+            new_destination = keep_in_bounds(GAME_BOUNDS, new_destination, 0.0);
         }
     }
     new_destination
@@ -328,4 +344,18 @@ fn keep_in_bounds(bounds: Bounds2D, mut pos: Vec3, padding: f32) -> Vec3 {
         pos.z = bounds.max_z - padding
     };
     pos
+}
+
+#[test]
+fn keep_in_bounds_when_vec3_contains_negative() {
+    let bounds = Bounds2D {
+        min_x: -2.,
+        min_z: -2.,
+        max_x: 2.,
+        max_z: 2.,
+    };
+
+    let pos = Vec3::new(-3., -2., -3.);
+
+    assert_eq!(keep_in_bounds(bounds, pos, 0.0), Vec3::new(-2., -2., -2.));
 }
