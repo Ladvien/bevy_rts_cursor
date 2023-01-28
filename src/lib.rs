@@ -111,7 +111,7 @@ fn selection_system(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     transforms: Query<(&Transform, &Aabb)>,
-    mut query: Query<(Entity, &mut Pickable), With<Pickable>>,
+    mut query: Query<Entity, With<Pickable>>,
 ) {
     if cursor.selection.just_selected {
         create_selection_confirmation_outline(
@@ -122,7 +122,7 @@ fn selection_system(
             &mut materials,
         );
 
-        for (entity, _) in query.iter_mut() {
+        for entity in query.iter_mut() {
             let (transform, aabb) = transforms.get(entity).unwrap();
 
             // Create a tolerance vector for checking if positions
