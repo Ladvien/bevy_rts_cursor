@@ -10,7 +10,7 @@ A [Bevy](https://github.com/bevyengine/bevy) plugin for selecting game entities 
 * Select entities in world space
 * Raycast based cursor for 3D environments
 * Drag-and-drop selection
-* Selected entities are queryable
+* Selected entities are accessible via `Res<Cursor>` resource
 
 # Quickstart
 
