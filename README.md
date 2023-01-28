@@ -35,6 +35,19 @@ fn main() {
 }
 ```
 
+Add the `RaycastSource::<RayReflector>` to your `Camera3dBundle`.
+```rust
+fn setup_cameras(mut commands: Commands) {
+    commands
+        .spawn((Camera3dBundle {
+            transform: Transform::from_xyz(10., 15., 10.)
+            .looking_at(Vec3::ZERO, Vec3::Y),
+            ..default()
+        },))
+        .insert(RaycastSource::<RayReflector>::new()); // Designate the camera as our source;
+}
+```
+
 Mark surfaces you want to interact with the cursor with a `CursorReflector` component.
 ```rust
     commands
