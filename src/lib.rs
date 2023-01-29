@@ -123,45 +123,53 @@ fn selection_system(
         );
 
         for entity in query.iter_mut() {
-            let (transform, aabb) = transforms.get(entity).unwrap();
+            match transforms.get(entity) {
+                Ok((transform, aabb)) => {
+                    // Create a tolerance vector for checking if positions
+                    // are in the area.
+                    let tolerance = Vec3::new(0., cursor.settings.y_inclusion_limit, 0.);
 
-            // Create a tolerance vector for checking if positions
-            // are in the area.
-            let tolerance = Vec3::new(0., cursor.settings.y_inclusion_limit, 0.);
+                    let torus_size = hypotenuse(aabb.half_extents.x, aabb.half_extents.z)
+                        + cursor.settings.torus_offset;
 
-            let torus_size =
-                hypotenuse(aabb.half_extents.x, aabb.half_extents.z) + cursor.settings.torus_offset;
+                    // Check if entities are within the highlighted area.
+                    if is_position_in_area(
+                        transform.translation,
+                        cursor.xyz1,
+                        cursor.xyz2,
+                        tolerance,
+                    ) {
+                        let relative_bottom_of_mesh = aabb.half_extents.y * -1.;
+                        let child_id = commands
+                            .spawn(PbrBundle {
+                                mesh: meshes.add(Mesh::from(shape::Torus {
+                                    ring_radius: cursor.settings.aesthetics.selected_line_thickness,
+                                    radius: torus_size,
+                                    ..default()
+                                })),
+                                material: materials.add(StandardMaterial {
+                                    base_color: cursor.settings.aesthetics.selected_area_box_color,
+                                    emissive: cursor.settings.aesthetics.selected_area_box_color,
+                                    ..default()
+                                }),
+                                transform: Transform {
+                                    translation: Vec3::new(0., relative_bottom_of_mesh, 0.),
+                                    ..default()
+                                },
+                                ..default()
+                            })
+                            .insert(SelectionHighlighter)
+                            .insert(Name::new("SelectionHighlighter"))
+                            .id();
 
-            // Check if entities are within the highlighted area.
-            if is_position_in_area(transform.translation, cursor.xyz1, cursor.xyz2, tolerance) {
-                let relative_bottom_of_mesh = aabb.half_extents.y * -1.;
-                let child_id = commands
-                    .spawn(PbrBundle {
-                        mesh: meshes.add(Mesh::from(shape::Torus {
-                            ring_radius: cursor.settings.aesthetics.selected_line_thickness,
-                            radius: torus_size,
-                            ..default()
-                        })),
-                        material: materials.add(StandardMaterial {
-                            base_color: cursor.settings.aesthetics.selected_area_box_color,
-                            emissive: cursor.settings.aesthetics.selected_area_box_color,
-                            ..default()
-                        }),
-                        transform: Transform {
-                            translation: Vec3::new(0., relative_bottom_of_mesh, 0.),
-                            ..default()
-                        },
-                        ..default()
-                    })
-                    .insert(SelectionHighlighter)
-                    .insert(Name::new("SelectionHighlighter"))
-                    .id();
+                        commands.entity(entity).add_child(child_id);
 
-                commands.entity(entity).add_child(child_id);
-
-                // Track selected.
-                cursor.selection.selected_units.insert(entity);
-                commands.entity(entity).insert(Selected);
+                        // Track selected.
+                        cursor.selection.selected_units.insert(entity);
+                        commands.entity(entity).insert(Selected);
+                    }
+                }
+                Err(_) => println!("Failed to get extents."),
             }
         }
     }

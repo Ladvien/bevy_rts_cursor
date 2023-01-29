@@ -1,0 +1,11 @@
+Model Information:
+* title:	SCP-096
+* source:	https://sketchfab.com/3d-models/scp-096-7074212c3ba54d0d959c48c55b8fefce
+* author:	Mm123 (https://sketchfab.com/Mm123)
+
+Model License:
+* license type:	CC-BY-SA-4.0 (http://creativecommons.org/licenses/by-sa/4.0/)
+* requirements:	Author must be credited. Modified versions must have the same license. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "SCP-096" (https://sketchfab.com/3d-models/scp-096-7074212c3ba54d0d959c48c55b8fefce) by Mm123 (https://sketchfab.com/Mm123) licensed under CC-BY-SA-4.0 (http://creativecommons.org/licenses/by-sa/4.0/)
